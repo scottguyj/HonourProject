@@ -7,7 +7,7 @@ from pygame.math import Vector2
 
 
 class Car:
-    def __init__(self, x, y, angle=0.0, length=4, max_steering=30, max_acceleration=10.0):
+    def __init__(self, x, y, angle=0.0, length=4, max_steering=30, max_acceleration=5.0):
         self.position = Vector2(x, y)
 
         # Sensor Co-ordinates
@@ -95,7 +95,7 @@ class Car:
             if self.velocity.x < 0:
                 self.acceleration = self.brake_deceleration
             else:
-                self.acceleration += 10 * dt
+                self.acceleration += 1 * dt
 
         # Backward Movement
         elif act == 1:
@@ -105,23 +105,24 @@ class Car:
                 self.acceleration -= 1 * dt
 
         elif act == 2:
-            self.steering -= 30 * dt
-
-        elif act == 3:
-            self.steering += 30 * dt
-
-        elif act == 4:
-            if abs(self.velocity.x) > dt * self.brake_deceleration:
-                self.acceleration = -copysign(self.brake_deceleration, self.velocity.x)
-            else:
-                self.acceleration = -self.velocity.x / dt
-
-        elif act == 5:
             if abs(self.velocity.x) > dt * self.free_deceleration:
                 self.acceleration = -copysign(self.free_deceleration, self.velocity.x)
             else:
                 if dt != 0:
                     self.acceleration = -self.velocity.x / dt
+
+        elif act == 3:
+            self.steering += 30 * dt
+
+        elif act == 4:
+            self.steering -= 30 * dt
+
+        elif act == 5:
+            if abs(self.velocity.x) > dt * self.brake_deceleration:
+                self.acceleration = -copysign(self.brake_deceleration, self.velocity.x)
+            else:
+                self.acceleration = -self.velocity.x / dt
+
         elif act == 6:
             self.steering = 0
         self.acceleration = max(-self.max_acceleration, min(self.acceleration, self.max_acceleration))
