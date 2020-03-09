@@ -117,13 +117,13 @@ class Car:
         elif act == 4:
             self.steering -= 30 * dt
 
-        elif act == 5:
+        elif act == 6:
             if abs(self.velocity.x) > dt * self.brake_deceleration:
                 self.acceleration = -copysign(self.brake_deceleration, self.velocity.x)
             else:
                 self.acceleration = -self.velocity.x / dt
 
-        elif act == 6:
+        elif act == 5:
             self.steering = 0
         self.acceleration = max(-self.max_acceleration, min(self.acceleration, self.max_acceleration))
 

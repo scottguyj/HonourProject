@@ -51,7 +51,7 @@ class Game:
 
     def cal_distance(self, x1, y1, x2, y2):
         distance = round(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), 5)
-        return distance
+        return distance * 10000
 
     def render_information(self, distance, crash_counter, current_state, episode, velocity):
         distance_text = "Distance = " + str(distance)
@@ -117,9 +117,9 @@ class Game:
 
             # Controls the steering of th vehicle
             if pressed[pygame.K_RIGHT]:
-                lead_car.action(3, dt)
-            elif pressed[pygame.K_LEFT]:
                 lead_car.action(4, dt)
+            elif pressed[pygame.K_LEFT]:
+                lead_car.action(3, dt)
             else:
                 lead_car.steering = 0
             lead_car.steering = max(-lead_car.max_steering, min(lead_car.steering, lead_car.max_steering))
@@ -146,6 +146,11 @@ class Game:
                                                                              2))
 
             self.render_information(distance_middle, self.crash_counter, self.current_state, 0, lead_car.velocity.x)
+
+            angle = self.cal_angle(follow_car.position_fmiddle.x, follow_car.position_fmiddle.y, lead_car.position.x,
+                                   lead_car.position.y)
+
+            print(angle)
             # pygame.draw.rect(self.screen, (255, 0, 0),
             #   (lead_car.position_left.x * ppu, lead_car.position_left.y * ppu, 5, 5))
             # pygame.draw.rect(self.screen, (255, 0, 0),
