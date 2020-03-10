@@ -63,30 +63,14 @@ class Car:
 
         # Sensor logic when steering
         self.r_angle_middle = (self.angle - 180) * (math.pi/180)
-        self.r_angle_left = (self.angle - 205) * (math.pi/180)
-        self.r_angle_right = (self.angle - 155) * (math.pi/180)
 
         self.position_middle.x = self.position.x + (2 * math.cos(-self.r_angle_middle))
         self.position_middle.y = self.position.y + (2 * math.sin(-self.r_angle_middle))
 
-        self.position_left.x = self.position.x + (2 * math.cos(-self.r_angle_left))
-        self.position_left.y = self.position.y + (2 * math.sin(-self.r_angle_left))
-
-        self.position_right.x = self.position.x + (2 * math.cos(-self.r_angle_right))
-        self.position_right.y = self.position.y + (2 * math.sin(-self.r_angle_right))
-
         self.r_angle_fmiddle = self.angle * (math.pi / 180)
-        self.r_angle_fleft = (self.angle - 25) * (math.pi / 180)
-        self.r_angle_fright = (self.angle + 25) * (math.pi / 180)
 
         self.position_fmiddle.x = self.position.x + (2 * math.cos(-self.r_angle_fmiddle))
         self.position_fmiddle.y = self.position.y + (2 * math.sin(-self.r_angle_fmiddle))
-
-        self.position_fleft.x = self.position.x + (2 * math.cos(-self.r_angle_fleft))
-        self.position_fleft.y = self.position.y + (2 * math.sin(-self.r_angle_fleft))
-
-        self.position_fright.x = self.position.x + (2 * math.cos(-self.r_angle_fright))
-        self.position_fright.y = self.position.y + (2 * math.sin(-self.r_angle_fright))
 
     def action(self, act, dt):
 
@@ -112,10 +96,16 @@ class Car:
                     self.acceleration = -self.velocity.x / dt
 
         elif act == 3:
-            self.steering += 30 * dt
+            if self.steering >= 0:
+                self.steering += 30 * dt
+            elif self.steering < 0:
+                self.steering = 0
 
         elif act == 4:
-            self.steering -= 30 * dt
+            if self.steering <= 0:
+                self.steering -= 30 * dt
+            elif self.steering > 0:
+                self.steering = 0
 
         elif act == 6:
             if abs(self.velocity.x) > dt * self.brake_deceleration:

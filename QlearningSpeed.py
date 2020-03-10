@@ -70,7 +70,8 @@ class Game:
 
         DISTANCE_MIN = 500
         DISTANCE_MAX = 5000
-        DISTANCE_IDEAL = 1000
+        DISTANCE_IDEAL_MIN = 950
+        DISTANCE_IDEAL_MAX = 1050
 
         # rewards
         HM_EPISODES = 500
@@ -79,7 +80,9 @@ class Game:
 
         # q learning Variables
         epsilon = 0
-        EPS_DECAY = 0.9998
+
+
+        EPS_DECAY = 0.9
         SHOW_EVERY = 100
         LEARNING_RATE = 0.1
         DISCOUNT = 0.95
@@ -139,7 +142,7 @@ class Game:
                         if new_obs <= DISTANCE_MIN or new_obs >= DISTANCE_MAX:
                             reward = -CRASH_PENALTY
 
-                        elif new_obs == DISTANCE_IDEAL:
+                        elif new_obs >= DISTANCE_IDEAL_MAX >= new_obs:
                             reward = DISTANCE_REWARD
                         else:
                             reward = -1

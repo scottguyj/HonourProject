@@ -76,21 +76,6 @@ class Game:
 
         crash_counter = 0
 
-        ANGLE_MAX = 8000
-        ANGLE_IDEAL = 0
-
-        # rewards
-        HM_EPISODES = 2000
-        CRASH_PENALTY = 300
-        ANGLE_REWARD = 5000
-
-        # q learning Variables
-        epsilon = 0
-        EPS_DECAY = 0.9998
-        SHOW_EVERY = 100
-        LEARNING_RATE = 0.1
-        DISCOUNT = 0.95
-
         # AI state
         learning_state = True
 
@@ -99,8 +84,6 @@ class Game:
 
         steering_q_table = "qtableTstSteering-1583833326.pickle"
 
-        set_reward = False
-
         if speed_q_table is None:
             print("Train the speed first")
         else:
@@ -108,7 +91,7 @@ class Game:
                 q_table_speed = pickle.load(f)
 
         if steering_q_table is None:
-            q_table_steering = np.zeros((30000, 3))
+            print("Train the steering first")
         else:
             with open(steering_q_table, "rb") as f:
                 q_table_steering = pickle.load(f)
@@ -118,22 +101,13 @@ class Game:
             if learning_state:
                 state = "Exploring"
 
-                for episode in range(HM_EPISODES):
-                    if not set_reward:
-                        random_y = 12
-                        set_reward = True
-                    else:
-                        random_y = np.random.randint(2, 20)
+                for episode in range(10):
 
-                    lead_car = Car(25, random_y)
+                    lead_car = Car(10, 12)
                     follow_car = Car(5, 12)
-
-                    print(f"on # {episode}, epsilon: {epsilon}")
                     show = True
 
-                    episode_rewards = 0
-
-                    for i in range(150):
+                    for i in range(15000):
                         dt = self.clock.get_time() / 1000
 
                         # Event queue
@@ -146,8 +120,34 @@ class Game:
                         #                                   follow_car.position_fmiddle.y) * 1000))
 
                         # speed_action = np.argmax(q_table_speed[speed_obs - 2000])
-                        follow_car.action(0, dt)
+                        pressed = pygame.key.get_pressed()
 
+                        if pressed[pygame.K_UP]:
+                            lead_car.action(0, dt)
+                            follow_car.action(0, dt)
+                        elif pressed[pygame.K_DOWN]:
+                            lead_car.action(1, dt)
+                            follow_car.action(1, dt)
+                        elif pressed[pygame.K_SPACE]:
+                            lead_car.action(4, dt)
+                        else:
+                            lead_car.action(2, dt)
+                            follow_car.action(2, dt)
+
+                        lead_car.acceleration = max(-lead_car.max_acceleration,
+                                                    min(lead_car.acceleration, lead_car.max_acceleration))
+                        follow_car.acceleration = max(-lead_car.max_acceleration,
+                                                      min(lead_car.acceleration, lead_car.max_acceleration))
+                        if pressed[pygame.K_RIGHT]:
+                            lead_car.action(4, dt)
+                        elif pressed[pygame.K_LEFT]:
+                            lead_car.action(3, dt)
+                        else:
+                            lead_car.action(5, dt)
+                        lead_car.steering = max(-lead_car.max_steering, min(lead_car.steering, lead_car.max_steering))
+
+                        lead_car.update(dt)
+                        lead_car.update(dt)
                         follow_car.update(dt)
 
                         # -------------------Steering-------------------
@@ -158,10 +158,7 @@ class Game:
 
                             steering_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
 
-                            if np.random.random() > epsilon:
-                                action = np.argmax(q_table_steering[steering_obs + 9000])
-                            else:
-                                action = np.random.randint(0, 3)
+                            action = np.argmax(q_table_steering[steering_obs + 9000])
 
                             # If vehicle is traveling backwards then reverse the steering
                             if follow_car.velocity.x < 0:
@@ -188,59 +185,10 @@ class Game:
 
                             steering_new_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
 
-                            print(steering_obs)
-
-                            if steering_new_obs <= -ANGLE_MAX or steering_new_obs >= ANGLE_MAX:
-                                reward = -CRASH_PENALTY
-                            elif steering_new_obs == ANGLE_IDEAL:
-                                reward = ANGLE_REWARD
-                            else:
-                                reward = -1
-
-                            max_future_q = np.max(q_table_steering[steering_new_obs + 9000])
-                            current_q = q_table_steering[steering_obs + 9000][action - 3]
-
-                            if reward == ANGLE_REWARD:
-                                new_q = ANGLE_REWARD
-                            elif reward == -CRASH_PENALTY:
-                                new_q = -CRASH_PENALTY
-                            else:
-                                new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (
-                                            reward + DISCOUNT * max_future_q)
-
-                            if (steering_new_obs != steering_obs and action != 5) or action == 5:
-                                q_table_steering[steering_obs + 9000][action - 3] = new_q
-
-                            if reward == -CRASH_PENALTY:
-                                break
-
-                        # --------------------------------------User input---------------------------------------
-
-                        pressed = pygame.key.get_pressed()
-
-                        # Controls the Acceleration, braking and reverse
-                        if pressed[pygame.K_UP]:
-                            lead_car.action(0, dt)
-                        elif pressed[pygame.K_DOWN]:
-                            lead_car.action(1, dt)
-                        elif pressed[pygame.K_SPACE]:
-                            lead_car.action(4, dt)
-                        else:
-                            lead_car.action(3, dt)
-
-                        lead_car.acceleration = max(-lead_car.max_acceleration,
-                                                    min(lead_car.acceleration, lead_car.max_acceleration))
+                        # --------------------------------------User input--------------------------------------
 
                         # Controls the steering of th vehicle
-                        if pressed[pygame.K_RIGHT]:
-                            lead_car.action(4, dt)
-                        elif pressed[pygame.K_LEFT]:
-                            lead_car.action(3, dt)
-                        else:
-                            lead_car.action(5, dt)
-                        lead_car.steering = max(-lead_car.max_steering, min(lead_car.steering, lead_car.max_steering))
 
-                        lead_car.update(dt)
 
                         if show:
                             self.screen.fill((0, 0, 0))
@@ -263,8 +211,6 @@ class Game:
 
                             self.clock.tick(self.ticks)
                     print(follow_car.angle)
-
-
 
                 with open(f"qtableSteering-{int(time.time())}.pickle", "wb") as f:
                     pickle.dump(q_table_steering, f)
