@@ -80,7 +80,7 @@ class Game:
         ANGLE_IDEAL = 0
 
         # rewards
-        HM_EPISODES = 2000
+        HM_EPISODES = 1000
         CRASH_PENALTY = 300
         ANGLE_REWARD = 5000
 
@@ -97,8 +97,7 @@ class Game:
         # file name goes here for existing q table
         speed_q_table = "qtable-1583233039.pickle"
 
-        steering_q_table = "qtableTstSteering-1583833326.pickle"
-
+        steering_q_table = "qtableSteering-1584383836.pickle"
         set_reward = False
 
         if speed_q_table is None:
@@ -174,6 +173,8 @@ class Game:
 
                             follow_car.action(action + 3, dt)
 
+                            print(steering_obs)
+
                             if action == 0:
                                 print("left")
                             elif action == 1:
@@ -187,8 +188,6 @@ class Game:
                                                    lead_car.position.x, lead_car.position.y)
 
                             steering_new_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
-
-                            print(steering_obs)
 
                             if steering_new_obs <= -ANGLE_MAX or steering_new_obs >= ANGLE_MAX:
                                 reward = -CRASH_PENALTY
@@ -262,7 +261,6 @@ class Game:
                             pygame.display.update()
 
                             self.clock.tick(self.ticks)
-                    print(follow_car.angle)
 
 
 
