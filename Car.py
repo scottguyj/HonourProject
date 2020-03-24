@@ -41,6 +41,8 @@ class Car:
 
     def update(self, dt):
         self.velocity += (self.acceleration * dt, 0)
+        if self.acceleration == 0:
+            self.velocity.x = 0
         self.velocity.x = max(-self.max_velocity, min(self.velocity.x, self.max_velocity))
 
         if self.steering:
@@ -83,6 +85,7 @@ class Car:
 
         # Backward Movement
         elif act == 1:
+            print("bak")
             if self.velocity.x > 0:
                 self.acceleration = -self.brake_deceleration
             else:
@@ -93,7 +96,9 @@ class Car:
                 self.acceleration = -copysign(self.free_deceleration, self.velocity.x)
             else:
                 if dt != 0:
-                    self.acceleration = -self.velocity.x / dt
+                    self.acceleration = 0
+                if self.acceleration == 0:
+                    self.velocity.x = 0
 
         elif act == 3:
             if self.steering >= 0:

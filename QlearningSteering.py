@@ -133,7 +133,7 @@ class Game:
 
                     episode_rewards = 0
 
-                    for i in range(150):
+                    for i in range(170):
                         dt = self.clock.get_time() / 1000
 
                         # Event queue

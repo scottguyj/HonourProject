@@ -106,7 +106,7 @@ class Game:
                 state = "Exploring"
 
                 for episode in range(HM_EPISODES):
-                    lead_car = Car(10, 5)
+                    lead_car = Car(12, 5)
                     follow_car = Car(5, 5)
 
                     print(f"on # {episode}, epsilon: {epsilon}")
