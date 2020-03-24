@@ -53,21 +53,21 @@ class Game:
         distance = round(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), 5)
         return distance * 10000
 
-    def render_information(self, distance, crash_counter, current_state, episode, velocity):
+    def render_information(self, x, y, distance, crash_counter, current_state, episode, velocity):
         distance_text = "Distance = " + str(distance)
-        self.show_text(distance_text, 0, 0)
+        self.show_text(distance_text, x + 0, y + 0)
 
         crash_counter_text = "Fails = " + str(crash_counter)
-        self.show_text(crash_counter_text, 0, 20)
+        self.show_text(crash_counter_text, x + 0, y + 20)
 
         current_state_text = "State: " + current_state
-        self.show_text(current_state_text, 0, 40)
+        self.show_text(current_state_text, x + 0, y + 40)
 
         current_episode_text = "Episode: " + str(episode + 1)
-        self.show_text(current_episode_text, 0, 60)
+        self.show_text(current_episode_text, x + 0, y + 60)
 
         current_velocity_text = "Velocity: " + str(velocity)
-        self.show_text(current_velocity_text, 0, 80)
+        self.show_text(current_velocity_text, x + 0, y + 80)
 
         pygame.display.flip()
 

@@ -40,7 +40,7 @@ class Game:
         distance = round(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), 5)
         return distance
 
-    def render_information(self, distance, crash_counter, current_state, episode, velocity):
+    def render_information(self, distance, crash_counter, current_state, episode, velocity, velocity1):
         distance_text = "Distance = " + str(distance)
         self.show_text(distance_text, 0, 0)
 
@@ -55,6 +55,11 @@ class Game:
 
         current_velocity_text = "Velocity: " + str(velocity)
         self.show_text(current_velocity_text, 0, 80)
+
+        # ---------------------------------------------------------------
+
+        current_velocity_text = "Velocity: " + str(velocity1)
+        self.show_text(current_velocity_text, 400, 80)
 
         pygame.display.flip()
 
@@ -147,16 +152,27 @@ class Game:
                         lead_car.steering = max(-lead_car.max_steering, min(lead_car.steering, lead_car.max_steering))
 
                         lead_car.update(dt)
-                        lead_car.update(dt)
                         follow_car.update(dt)
 
                         # -------------------Steering-------------------
-                        if follow_car.velocity.x > 0:
+                        if follow_car.velocity.x != 0:
 
                             angle = self.cal_angle(follow_car.position_fmiddle.x, follow_car.position_fmiddle.y,
                                                    lead_car.position.x, lead_car.position.y)
 
+                            pygame.draw.rect(self.screen, (255, 0, 0),
+                                               (lead_car.position_fmiddle.x * ppu, lead_car.position_fmiddle.y * ppu, 5, 5))
+
+                            # print(angle)
+                            # print((follow_car.angle + 90))
                             steering_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
+
+                            if - 18000 > steering_obs > - 37000:
+                                steering_obs += 36000
+                            print(steering_obs)
+
+                            # print("leading car")
+                            # print(lead_car.angle)
 
                             action = np.argmax(q_table_steering[steering_obs + 9000])
 
@@ -164,12 +180,13 @@ class Game:
                             if follow_car.velocity.x < 0:
                                 if action == 0:
                                     action = 1
-                                elif action == 2:
-                                    action = 1
+                                elif action == 1:
+                                    action = 0
                                 else:
-                                    action = 3
+                                    action = 2
 
                             follow_car.action(action + 3, dt)
+                            # print(steering_obs)
 
                             if action == 0:
                                 print("left")
@@ -178,6 +195,7 @@ class Game:
                             else:
                                 print("Straight")
 
+                            lead_car.update(dt)
                             follow_car.update(dt)
 
                             angle = self.cal_angle(follow_car.position_fmiddle.x, follow_car.position_fmiddle.y,
@@ -187,8 +205,7 @@ class Game:
 
                         # --------------------------------------User input--------------------------------------
 
-                        # Controls the steering of th vehicle
-
+                        # Controls the steering of the vehicle
 
                         if show:
                             self.screen.fill((0, 0, 0))
@@ -204,8 +221,8 @@ class Game:
                                              follow_car.position * ppu - (rect_follow.width / 2, rect_follow.height /
                                                                           2))
 
-                            self.render_information(0, crash_counter, state, 0,
-                                                    lead_car.velocity.x)
+                            self.render_information(0, crash_counter, state, 0, lead_car.velocity.x,
+                                                    follow_car.velocity.x)
 
                             pygame.display.update()
 

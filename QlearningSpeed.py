@@ -79,7 +79,7 @@ class Game:
         DISTANCE_REWARD = 5000
 
         # q learning Variables
-        epsilon = 0
+        epsilon = 0.9
 
 
         EPS_DECAY = 0.9
@@ -91,10 +91,10 @@ class Game:
         learning_state = True
 
         # file name goes here for existing q table
-        start_q_table = "qtable-1583233039.pickle"
+        start_q_table = None
 
         if start_q_table is None:
-            q_table = np.zeros((5000, 3))
+            q_table = np.zeros((10000, 3))
             print("Created table")
         else:
             with open(start_q_table, "rb") as f:
@@ -114,7 +114,7 @@ class Game:
 
                     episode_rewards = 0
 
-                    for i in range(1000):
+                    for i in range(10000):
                         dt = self.clock.get_time() / 1000
 
                         # Event queue

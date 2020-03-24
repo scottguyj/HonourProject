@@ -15,7 +15,7 @@ class Car:
         self.position_left = Vector2(x, y)
         self.position_right = Vector2(x, y)
 
-        self.position_fmiddle = Vector2(x, y)
+        self.position_fmiddle = Vector2(x + 2, y)
         self.position_fleft = Vector2(x, y)
         self.position_fright = Vector2(x, y)
 
@@ -58,10 +58,10 @@ class Car:
 
         self.angle += degrees(angular_velocity) * dt
 
-        if self.angle > 360:
-            self.angle = -360
-        elif self.angle < - 360:
-            self.angle = 360
+        if self.angle >= 180:
+            self.angle = -180
+        elif self.angle <= -180:
+            self.angle = 180
 
         # Sensor logic when steering
         self.r_angle_middle = (self.angle - 180) * (math.pi/180)
@@ -85,7 +85,6 @@ class Car:
 
         # Backward Movement
         elif act == 1:
-            print("bak")
             if self.velocity.x > 0:
                 self.acceleration = -self.brake_deceleration
             else:
