@@ -193,6 +193,7 @@ class Game:
 
                             self.render_information(obs, crash_counter, state, 0,
                                                     lead_car.velocity.x)
+                            pygame.draw.rect(self.screen, (255, 0, 0), (lead_car.position_end_sensor.x * ppu, lead_car.position_end_sensor.y * ppu, 5, 5))
 
                             pygame.display.update()
 

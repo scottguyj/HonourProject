@@ -7,7 +7,7 @@ from pygame.math import Vector2
 
 
 class Car:
-    def __init__(self, x, y, angle=0.0, length=4, max_steering=30, max_acceleration=5.0):
+    def __init__(self, x, y, angle=0.0, length=4, max_steering=30, max_acceleration=1.0):
         self.position = Vector2(x, y)
 
         # Sensor Co-ordinates
@@ -16,17 +16,20 @@ class Car:
         self.position_right = Vector2(x, y)
 
         self.position_fmiddle = Vector2(x + 2, y)
-        self.position_fleft = Vector2(x, y)
-        self.position_fright = Vector2(x, y)
+        self.position_end_sensor = Vector2(x + 2, y - 6)
+        self.sensor_angle = -50.0
+
+        self.position_back_left = Vector2(x, y)
+        self.position_back_right = Vector2(x, y)
 
         self.velocity = Vector2(0.0, 0.0)
         self.angle = angle
         self.length = length
         self.max_acceleration = max_acceleration
         self.max_steering = max_steering
-        self.max_velocity = 10
-        self.brake_deceleration =20
-        self.free_deceleration = 5
+        self.max_velocity = 2
+        self.brake_deceleration = 100
+        self.free_deceleration = 1000000
 
         self.acceleration = 0.0
         self.steering = 0.0
@@ -35,9 +38,10 @@ class Car:
         self.r_angle_left = 0.0
         self.r_angle_right = 0.0
 
-        self.r_angle_fmiddle = 0.0
-        self.r_angle_fleft = 0.0
+        self.r_angle_back_right = 0.0
+        self.r_angle_back_left = 0.0
         self.r_angle_fright = 0.0
+        self.r_sensor_angle = 0.0
 
     def update(self, dt):
         self.velocity += (self.acceleration * dt, 0)
@@ -73,6 +77,31 @@ class Car:
 
         self.position_fmiddle.x = self.position.x + (2 * math.cos(-self.r_angle_fmiddle))
         self.position_fmiddle.y = self.position.y + (2 * math.sin(-self.r_angle_fmiddle))
+
+        self.r_sensor_angle = (self.angle - (self.sensor_angle)) * (math.pi / 180)
+
+        self.position_end_sensor.x = self.position.x + (6 * math.cos(-self.r_sensor_angle))
+        self.position_end_sensor.y = self.position.y + (6 * math.sin(-self.r_sensor_angle))
+
+        self.r_angle_back_left = (self.angle - 210) * (math.pi / 180)
+
+        self.position_back_left.x = self.position.x + (2 * math.cos(-self.r_angle_back_left))
+        self.position_back_left.y = self.position.y + (2 * math.sin(-self.r_angle_back_left))
+
+        self.r_angle_back_right = (self.angle - 150) * (math.pi / 180)
+
+        self.position_back_right.x = self.position.x + (2 * math.cos(-self.r_angle_back_right))
+        self.position_back_right.y = self.position.y + (2 * math.sin(-self.r_angle_back_right))
+
+    def update_sensor(self):
+        self.r_sensor_angle = (self.angle - (self.sensor_angle)) * (math.pi / 180)
+
+        self.position_end_sensor.x = self.position.x + (6 * math.cos(-self.r_sensor_angle))
+        self.position_end_sensor.y = self.position.y + (6 * math.sin(-self.r_sensor_angle))
+
+
+
+
 
     def action(self, act, dt):
 

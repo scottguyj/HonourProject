@@ -23,14 +23,15 @@ class Game:
         self.ticks = 60
         self.exit = False
 
-    def ult_steering(self, c1, c2):
+    def ult_steering(self, c1, c2,):
 
         found = False
         counter_left = 0
         counter_right = 0
         ppu = 32
+        sensor = 50
 
-        for i in range(181):
+        for i in range((sensor * 2) + 1):
 
             p0_x = c1.position_fmiddle.x
             p0_y = c1.position_fmiddle.y
@@ -85,14 +86,14 @@ class Game:
                 intersect_x = (B2 * C1 - B1 * C2) / denominator
                 intersect_y = (A1 * C2 - A2 * C1) / denominator
 
-                # pygame.draw.rect(self.screen, (255, 0, 0), (intersect_x * ppu, intersect_y * ppu, 5, 5))
-                # pygame.draw.line(self.screen, (255, 0, 0),
-                #                  (p2_x * ppu, p2_y * ppu),
-                #                  (p3_x * ppu, p3_y * ppu), 1)
-                # pygame.draw.line(self.screen, (255, 0, 0),
-                #                  (p0_x * ppu, p0_y * ppu),
-                #                  (p1_x * ppu, p1_y * ppu),
-                #                  1)
+                pygame.draw.rect(self.screen, (255, 0, 0), (intersect_x * ppu, intersect_y * ppu, 5, 5))
+                pygame.draw.line(self.screen, (255, 0, 0),
+                                 (p2_x * ppu, p2_y * ppu),
+                                 (p3_x * ppu, p3_y * ppu), 1)
+                pygame.draw.line(self.screen, (255, 0, 0),
+                                 (p0_x * ppu, p0_y * ppu),
+                                 (p1_x * ppu, p1_y * ppu),
+                                 1)
 
             else:
                 # print("Not connect")
@@ -114,12 +115,8 @@ class Game:
             c1.sensor_angle += 1
             c1.update_sensor()
 
-        c1.sensor_angle = -90
+        c1.sensor_angle = -sensor
         c1.update_sensor()
-
-        print(counter_left)
-        print("----------")
-        print(counter_right)
 
         return counter_left - counter_right
 
@@ -140,7 +137,7 @@ class Game:
         distance = round(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), 5)
         return distance
 
-    def render_information(self, distance, crash_counter, steering_type, episode, speed, velocity, velocity1):
+    def render_information(self, distance, crash_counter, steering_type, episode, velocity, velocity1):
         distance_text = "Distance = " + str(distance)
         self.show_text(distance_text, 0, 0)
 
@@ -153,16 +150,13 @@ class Game:
         current_steering_text = "Steering: " + episode
         self.show_text(current_steering_text, 0, 90)
 
-        current_speed_text = "Speed: " + speed
-        self.show_text(current_speed_text, 0, 120)
-
         current_velocity_text = "Lead Velocity: " + str(velocity)
-        self.show_text(current_velocity_text, 0, 150)
+        self.show_text(current_velocity_text, 0, 120)
 
         # ---------------------------------------------------------------
 
         current_velocity_text = "Following Velocity: " + str(velocity1)
-        self.show_text(current_velocity_text, 450, 150)
+        self.show_text(current_velocity_text, 450, 120)
 
         pygame.display.flip()
 
@@ -190,7 +184,7 @@ class Game:
         # file name goes here for existing q table
         speed_q_table = "qtableSpeed-1586792839.pickle"
 
-        steering_q_table = "qtableSteering-1586265152.pickle"
+        steering_q_table = "qtableSensorSteering-1587931416.pickle"
 
         if speed_q_table is None:
             print("Train the speed first")
@@ -207,9 +201,8 @@ class Game:
         while not self.exit:
 
             if learning_state:
-                state = "Angle calculation Steering"
+                state = "Wide Sensor Steering"
                 steering_dir = "No Movement"
-                speed_dir = "No Movement"
 
                 for episode in range(10):
 
@@ -231,22 +224,16 @@ class Game:
 
                         speed_action = np.argmax(q_table_speed[speed_obs])
 
-                        # print("------------")
-                        # print(speed_obs)
-                        # print(speed_action)
-
-                        # print(self.ult_steering(follow_car, lead_car))
-
                         if follow_car.sensor_angle == 90:
                             follow_car.sensor_angle -= 190
                         follow_car.update_sensor()
 
-                        if speed_action == 0:
-                            speed_dir = "Forward"
-                        elif speed_action == 1:
-                            speed_dir = "Back"
-                        else:
-                            speed_dir = "No Movement"
+                        # if speed_action == 0:
+                        #     print("Forward")
+                        # elif speed_action == 1:
+                        #     print("Back")
+                        # else:
+                        #     print("nothing")
 
                         pressed = pygame.key.get_pressed()
 
@@ -289,17 +276,14 @@ class Game:
 
                             # print(angle)
                             # print((follow_car.angle + 90))
-                            steering_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
-
-                            if - 18000 > steering_obs:
-                                steering_obs += 36000
-                            if 18000 < steering_obs:
-                                steering_obs -= 36000
+                            steering_obs = int(self.ult_steering(follow_car, lead_car) + 180)
 
                             # print("leading car")
                             # print(lead_car.angle)
 
-                            action = np.argmax(q_table_steering[steering_obs + 18000])
+
+
+                            action = np.argmax(q_table_steering[steering_obs])
 
                             # If vehicle is traveling backwards then reverse the steering
                             if follow_car.velocity.x < 0:
@@ -313,17 +297,16 @@ class Game:
                             follow_car.action(action + 3, dt)
                             follow_car.steering = max(-follow_car.max_steering,
                                                       min(follow_car.steering, follow_car.max_steering))
+                            # print(steering_obs)
 
                             steering_dir = ""
 
-                            if action == 0:
+                            if int(self.ult_steering(follow_car, lead_car)) < 0:
                                 steering_dir = "left"
-                            elif action == 1:
+                            elif int(self.ult_steering(follow_car, lead_car)) > 0:
                                 steering_dir = "right"
                             else:
                                 steering_dir = "straight ahead"
-
-                            # print(steering_obs)
 
                             lead_car.update(dt)
                             follow_car.update(dt)
@@ -346,20 +329,12 @@ class Game:
                                              follow_car.position * ppu - (rect_follow.width / 2, rect_follow.height /
                                                                           2))
 
-                            self.render_information(speed_obs, crash_counter, state, steering_dir, speed_dir, lead_car.velocity.x,
+                            self.render_information(speed_obs, crash_counter, state, steering_dir, lead_car.velocity.x,
                                                     follow_car.velocity.x)
-
-                            # pygame.draw.line(self.screen, (255, 0, 0),
-                            #     (lead_car.position_back_right.x * ppu, lead_car.position_back_right.y * ppu), (lead_car.position_back_left.x * ppu, lead_car.position_back_left.y * ppu), 1)
-                            # pygame.draw.line(self.screen, (255, 0, 0),
-                            #                  (follow_car.position_end_sensor.x * ppu, follow_car.position_end_sensor.y * ppu),
-                            #                  (follow_car.position_fmiddle.x * ppu, follow_car.position_fmiddle.y * ppu),
-                            #                  1)
 
                             pygame.display.update()
 
                             self.clock.tick(self.ticks)
-                    print(follow_car.angle)
 
                 with open(f"qtableSteering-{int(time.time())}.pickle", "wb") as f:
                     pickle.dump(q_table_steering, f)
