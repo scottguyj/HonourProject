@@ -80,19 +80,6 @@ class Game:
 
             if((0 <= rx0 <= 1) or (0 <= ry0 <= 1)) and ((0 <= rx1 <= 1) or (0 <= ry1 <= 1)):
                 found = True
-                # print("connect")
-
-                intersect_x = (B2 * C1 - B1 * C2) / denominator
-                intersect_y = (A1 * C2 - A2 * C1) / denominator
-
-                # pygame.draw.rect(self.screen, (255, 0, 0), (intersect_x * ppu, intersect_y * ppu, 5, 5))
-                # pygame.draw.line(self.screen, (255, 0, 0),
-                #                  (p2_x * ppu, p2_y * ppu),
-                #                  (p3_x * ppu, p3_y * ppu), 1)
-                # pygame.draw.line(self.screen, (255, 0, 0),
-                #                  (p0_x * ppu, p0_y * ppu),
-                #                  (p1_x * ppu, p1_y * ppu),
-                #                  1)
 
             else:
                 # print("Not connect")
@@ -117,11 +104,10 @@ class Game:
         c1.sensor_angle = -90
         c1.update_sensor()
 
-        print(counter_left)
-        print("----------")
-        print(counter_right)
-
-        return counter_left - counter_right
+        if not found:
+            return 0
+        else:
+            return counter_left - counter_right
 
     def cal_angle(self, x1, y1, x2, y2):
         delta_x = x2 - x1
@@ -229,6 +215,10 @@ class Game:
                                                            follow_car.position_fmiddle.x,
                                                            follow_car.position_fmiddle.y) * 1000))
 
+                        if speed_obs <= 50 or speed_obs > 8000:
+                            crash_counter += 1
+                            break
+
                         speed_action = np.argmax(q_table_speed[speed_obs])
 
                         # print("------------")
@@ -333,7 +323,10 @@ class Game:
                         # Controls the steering of the vehicle
 
                         if show:
+                            # makes window black
                             self.screen.fill((0, 0, 0))
+
+                            # rotating the image of the car to match the angle of the vehicles
                             rotated_lead = pygame.transform.rotate(car_image, lead_car.angle)
                             rotated_following = pygame.transform.rotate(car_image, follow_car.angle)
 
@@ -346,24 +339,22 @@ class Game:
                                              follow_car.position * ppu - (rect_follow.width / 2, rect_follow.height /
                                                                           2))
 
+                            pygame.draw.rect(self.screen, (0, 255, 0), (follow_car.position_fmiddle.x * ppu, follow_car.position_fmiddle.y * ppu, 5, 5))
+
+                            # pygame.draw.rect(self.screen, (0, 255, 0), (follow_car.position_back_right.x * ppu, follow_car.position_back_right.y * ppu, 5, 5))
+                            # pygame.draw.rect(self.screen, (0, 255, 0), (follow_car.position_back_left.x * ppu, follow_car.position_back_left.y * ppu, 5, 5))
+                            pygame.draw.rect(self.screen, (0, 255, 0), (lead_car.position_middle.x * ppu, lead_car.position_middle.y * ppu, 5, 5))
+
+                            pygame.draw.line(self.screen, (0, 255, 0),
+                                             (follow_car.position_fmiddle.x * ppu, follow_car.position_fmiddle.y * ppu),
+                                             (lead_car.position_middle.x * ppu, lead_car.position_middle.y * ppu), 1)
+
                             self.render_information(speed_obs, crash_counter, state, steering_dir, speed_dir, lead_car.velocity.x,
                                                     follow_car.velocity.x)
-
-                            # pygame.draw.line(self.screen, (255, 0, 0),
-                            #     (lead_car.position_back_right.x * ppu, lead_car.position_back_right.y * ppu), (lead_car.position_back_left.x * ppu, lead_car.position_back_left.y * ppu), 1)
-                            # pygame.draw.line(self.screen, (255, 0, 0),
-                            #                  (follow_car.position_end_sensor.x * ppu, follow_car.position_end_sensor.y * ppu),
-                            #                  (follow_car.position_fmiddle.x * ppu, follow_car.position_fmiddle.y * ppu),
-                            #                  1)
 
                             pygame.display.update()
 
                             self.clock.tick(self.ticks)
-                    print(follow_car.angle)
-
-                with open(f"qtableSteering-{int(time.time())}.pickle", "wb") as f:
-                    pickle.dump(q_table_steering, f)
-                    learning_state = False
                 self.exit = True
 
         pygame.quit()

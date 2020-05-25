@@ -11,7 +11,7 @@ import time
 from Car import Car
 
 
-class Game:
+class Q_learning_Speed:
 
     def __init__(self):
         pygame.init()
@@ -28,7 +28,10 @@ class Game:
         text = font.render(text, 1, (255, 255, 255))
         self.screen.blit(text, (x, y))
 
-    def cal_distance(self, x1, y1, x2, y2):
+    # calculate the distance between the 2 vehicles
+
+    @staticmethod
+    def cal_distance(x1, y1, x2, y2):
         distance = round(math.sqrt((x2 - x1) ** 2 + (y2 - y1) ** 2), 5)
         return distance
 
@@ -69,7 +72,7 @@ class Game:
         crash_counter = 0
 
         DISTANCE_MIN = 500
-        DISTANCE_MAX = 5000
+        DISTANCE_MAX = 5001
         DISTANCE_IDEAL_MIN = 950
         DISTANCE_IDEAL_MAX = 1050
 
@@ -80,10 +83,6 @@ class Game:
 
         # q learning Variables
         epsilon = 0.9
-
-
-        EPS_DECAY = 0.9
-        SHOW_EVERY = 100
         LEARNING_RATE = 0.1
         DISCOUNT = 0.95
 
@@ -127,7 +126,7 @@ class Game:
                                                      follow_car.position_fmiddle.y) * 1000))
 
                         if np.random.random() > epsilon:
-                            action = np.argmax(q_table[obs - 2000])
+                            action = np.argmax(q_table[obs])
                         else:
                             action = np.random.randint(0, 3)
 
@@ -141,32 +140,15 @@ class Game:
 
                         if new_obs <= DISTANCE_MIN or new_obs >= DISTANCE_MAX:
                             reward = -CRASH_PENALTY
+                            print(new_obs)
 
-                        elif new_obs >= DISTANCE_IDEAL_MAX >= new_obs:
+                        elif DISTANCE_IDEAL_MIN <= new_obs <= DISTANCE_IDEAL_MAX:
                             reward = DISTANCE_REWARD
                         else:
                             reward = -1
 
-                        # User input
-                        pressed = pygame.key.get_pressed()
-
-                        # Controls the Acceleration, braking and reverse
-                        if pressed[pygame.K_UP]:
-                            lead_car.action(0, dt)
-                        elif pressed[pygame.K_DOWN]:
-                            lead_car.action(1, dt)
-                        elif pressed[pygame.K_SPACE]:
-                            lead_car.action(4, dt)
-                        else:
-                            lead_car.action(2, dt)
-
-                        lead_car.acceleration = max(-lead_car.max_acceleration,
-                                                    min(lead_car.acceleration, lead_car.max_acceleration))
-
-                        lead_car.update(dt)
-
-                        max_future_q = np.max(q_table[new_obs - 2000])
-                        current_q = q_table[obs - 2000][action]
+                        max_future_q = np.max(q_table[new_obs])
+                        current_q = q_table[obs][action]
 
                         if reward == DISTANCE_REWARD:
                             new_q = DISTANCE_REWARD
@@ -175,7 +157,7 @@ class Game:
                         else:
                             new_q = (1 - LEARNING_RATE) * current_q + LEARNING_RATE * (reward + DISCOUNT * max_future_q)
 
-                        q_table[obs - 2000][action] = new_q
+                        q_table[obs][action] = new_q
 
                         if show:
                             self.screen.fill((0, 0, 0))
@@ -192,7 +174,7 @@ class Game:
                                                                           2))
 
                             self.render_information(obs, crash_counter, state, 0,
-                                                    lead_car.velocity.x)
+                                                    follow_car.velocity.x)
                             pygame.draw.rect(self.screen, (255, 0, 0), (lead_car.position_end_sensor.x * ppu, lead_car.position_end_sensor.y * ppu, 5, 5))
 
                             pygame.display.update()
@@ -213,5 +195,5 @@ class Game:
 
 
 if __name__ == '__main__':
-    game = Game()
-    game.run()
+    speed_learning = Q_learning_Speed()
+    speed_learning.run()

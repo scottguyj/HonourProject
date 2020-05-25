@@ -23,7 +23,8 @@ class Game:
         self.ticks = 60
         self.exit = False
 
-    def cal_angle(self, x1, y1, x2, y2):
+    @staticmethod
+    def cal_angle(x1, y1, x2, y2):
         delta_x = x2 - x1
         delta_y = y2 - y1
 
@@ -68,6 +69,105 @@ class Game:
         pygame.display.flip()
         self.clock.tick(self.ticks)
 
+    def ult_steering(self, c1, c2,):
+
+        found = False
+        counter_left = 0
+        counter_right = 0
+        ppu = 32
+        sensor = 50
+
+        for i in range((sensor * 2) + 1):
+
+            p0_x = c1.position_fmiddle.x
+            p0_y = c1.position_fmiddle.y
+
+            p1_x = c1.position_end_sensor.x
+            p1_y = c1.position_end_sensor.y
+
+            p2_x = c2.position_back_left.x
+            p2_y = c2.position_back_left.y
+
+            p3_x = c2.position_back_right.x
+            p3_y = c2.position_back_right.y
+
+            A1 = p1_y - p0_y
+            B1 = p0_x - p1_x
+            C1 = A1 * p0_x + B1 * p0_y
+            A2 = p3_y - p2_y
+            B2 = p2_x - p3_x
+            C2 = A2 * p2_x + B2 * p2_y
+            denominator = A1 * B2 - A2 * B1
+
+            if denominator == 0:
+                return 9999999999999999
+
+            intersect_x = (B2 * C1 - B1 * C2) / denominator
+            intersect_y = (A1 * C2 - A2 * C1) / denominator
+
+            if p1_x - p0_x == 0:
+                rx0 = 2
+            else:
+                rx0 = (intersect_x - p0_x) / (p1_x - p0_x)
+
+            if p1_y - p0_y == 0:
+                ry0 = 2
+            else:
+                ry0 = (intersect_y - p0_y) / (p1_y - p0_y)
+
+            if p3_x - p2_x == 0:
+                rx1 = 2
+            else:
+                rx1 = (intersect_x - p2_x) / (p3_x - p2_x)
+
+            if p3_y - p2_y == 0:
+                ry1 = 2
+            else:
+                ry1 = (intersect_y - p2_y) / (p3_y - p2_y)
+
+            if((0 <= rx0 <= 1) or (0 <= ry0 <= 1)) and ((0 <= rx1 <= 1) or (0 <= ry1 <= 1)):
+                found = True
+
+                intersect_x = (B2 * C1 - B1 * C2) / denominator
+                intersect_y = (A1 * C2 - A2 * C1) / denominator
+
+                pygame.draw.rect(self.screen, (255, 0, 0), (intersect_x * ppu, intersect_y * ppu, 5, 5))
+                pygame.draw.line(self.screen, (255, 0, 0),
+                                 (p2_x * ppu, p2_y * ppu),
+                                 (p3_x * ppu, p3_y * ppu), 1)
+                pygame.draw.line(self.screen, (255, 0, 0),
+                                 (p0_x * ppu, p0_y * ppu),
+                                 (p1_x * ppu, p1_y * ppu),
+                                 1)
+
+            else:
+                # print("Not connect")
+
+                if not found:
+                    pygame.draw.line(self.screen, (0, 255, 0),
+                                 (p0_x * ppu, p0_y * ppu),
+                                 (p1_x * ppu, p1_y * ppu),
+                                 1)
+                    counter_left += 1
+                else:
+                    pygame.draw.line(self.screen, (0, 0, 255),
+                                     (p0_x * ppu, p0_y * ppu),
+                                     (p1_x * ppu, p1_y * ppu),
+                                     1)
+                    counter_right += 1
+            pygame.display.update()
+
+            c1.sensor_angle += 1
+            c1.update_sensor()
+
+        c1.sensor_angle = -sensor
+        c1.update_sensor()
+
+        if not found:
+            return 0
+        else:
+            return counter_left - counter_right
+
     def run(self):
         current_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(current_dir, "car.png")
@@ -81,30 +181,20 @@ class Game:
 
         # rewards
         HM_EPISODES = 1000
-        CRASH_PENALTY = 300
+        CRASH_PENALTY = -300
         ANGLE_REWARD = 5000
 
         # q learning Variables
         epsilon = 0
-        EPS_DECAY = 0.9998
-        SHOW_EVERY = 100
         LEARNING_RATE = 0.1
         DISCOUNT = 0.95
 
         # AI state
         learning_state = True
 
-        # file name goes here for existing q table
-        speed_q_table = "qtable-1583233039.pickle"
-
-        steering_q_table = "qtableSteering-1584383836.pickle"
         set_reward = False
 
-        if speed_q_table is None:
-            print("Train the speed first")
-        else:
-            with open(speed_q_table, "rb") as f:
-                q_table_speed = pickle.load(f)
+        steering_q_table = "qtableSteering-1586265152.pickle"
 
         if steering_q_table is None:
             q_table_steering = np.zeros((30000, 3))
@@ -119,12 +209,12 @@ class Game:
 
                 for episode in range(HM_EPISODES):
                     if not set_reward:
-                        random_y = 12
+                        random_y = 0
                         set_reward = True
                     else:
-                        random_y = np.random.randint(2, 20)
+                        random_y = np.random.randint(-30, 30)
 
-                    lead_car = Car(25, random_y)
+                    lead_car = Car(12, 12, angle=random_y)
                     follow_car = Car(5, 12)
 
                     print(f"on # {episode}, epsilon: {epsilon}")
@@ -132,7 +222,7 @@ class Game:
 
                     episode_rewards = 0
 
-                    for i in range(170):
+                    for i in range(250):
                         dt = self.clock.get_time() / 1000
 
                         # Event queue
@@ -140,14 +230,12 @@ class Game:
                             if event.type == pygame.QUIT:
                                 self.exit = True
 
-                        # speed_obs = int((self.cal_distance(lead_car.position_middle.x, lead_car.position_middle.y,
-                        #                                   follow_car.position_fmiddle.x,
-                        #                                   follow_car.position_fmiddle.y) * 1000))
-
-                        # speed_action = np.argmax(q_table_speed[speed_obs - 2000])
+                        # Vehicles going forward Automatically 
                         follow_car.action(0, dt)
+                        lead_car.action(0, dt)
 
                         follow_car.update(dt)
+                        lead_car.update(dt)
 
                         # -------------------Steering-------------------
                         if follow_car.velocity.x > 0:
@@ -157,8 +245,13 @@ class Game:
 
                             steering_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
 
+                            if - 18000 > steering_obs:
+                                steering_obs += 36000
+                            if 18000 < steering_obs:
+                                steering_obs -= 36000
+
                             if np.random.random() > epsilon:
-                                action = np.argmax(q_table_steering[steering_obs + 9000])
+                                action = np.argmax(q_table_steering[steering_obs + 18000])
                             else:
                                 action = np.random.randint(0, 3)
 
@@ -172,22 +265,17 @@ class Game:
                                     action = 3
 
                             follow_car.action(action + 3, dt)
-
-                            print(steering_obs)
-
-                            if action == 0:
-                                print("left")
-                            elif action == 1:
-                                print("right")
-                            else:
-                                print("Straight")
-
                             follow_car.update(dt)
 
                             angle = self.cal_angle(follow_car.position_fmiddle.x, follow_car.position_fmiddle.y,
                                                    lead_car.position.x, lead_car.position.y)
 
                             steering_new_obs = int(round(angle - (follow_car.angle + 90), 2) * 100)
+
+                            if - 18000 > steering_new_obs:
+                                steering_new_obs += 36000
+                            if 18000 < steering_new_obs:
+                                steering_new_obs -= 36000
 
                             if steering_new_obs <= -ANGLE_MAX or steering_new_obs >= ANGLE_MAX:
                                 reward = -CRASH_PENALTY
@@ -196,8 +284,8 @@ class Game:
                             else:
                                 reward = -1
 
-                            max_future_q = np.max(q_table_steering[steering_new_obs + 9000])
-                            current_q = q_table_steering[steering_obs + 9000][action - 3]
+                            max_future_q = np.max(q_table_steering[steering_new_obs + 18000])
+                            current_q = q_table_steering[steering_obs + 18000][action - 3]
 
                             if reward == ANGLE_REWARD:
                                 new_q = ANGLE_REWARD
@@ -208,7 +296,7 @@ class Game:
                                             reward + DISCOUNT * max_future_q)
 
                             if (steering_new_obs != steering_obs and action != 5) or action == 5:
-                                q_table_steering[steering_obs + 9000][action - 3] = new_q
+                                q_table_steering[steering_obs + 18000][action - 3] = new_q
 
                             if reward == -CRASH_PENALTY:
                                 break

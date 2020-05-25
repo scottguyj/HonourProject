@@ -81,7 +81,6 @@ class Game:
 
             if((0 <= rx0 <= 1) or (0 <= ry0 <= 1)) and ((0 <= rx1 <= 1) or (0 <= ry1 <= 1)):
                 found = True
-                # print("connect")
 
                 intersect_x = (B2 * C1 - B1 * C2) / denominator
                 intersect_y = (A1 * C2 - A2 * C1) / denominator
@@ -118,7 +117,10 @@ class Game:
         c1.sensor_angle = -sensor
         c1.update_sensor()
 
-        return counter_left - counter_right
+        if not found:
+            return 0
+        else:
+            return counter_left - counter_right
 
     def cal_angle(self, x1, y1, x2, y2):
         delta_x = x2 - x1
@@ -204,6 +206,7 @@ class Game:
                 state = "Wide Sensor Steering"
                 steering_dir = "No Movement"
 
+
                 for episode in range(10):
 
                     lead_car = Car(10, 12)
@@ -224,16 +227,9 @@ class Game:
 
                         speed_action = np.argmax(q_table_speed[speed_obs])
 
-                        if follow_car.sensor_angle == 90:
-                            follow_car.sensor_angle -= 190
-                        follow_car.update_sensor()
-
-                        # if speed_action == 0:
-                        #     print("Forward")
-                        # elif speed_action == 1:
-                        #     print("Back")
-                        # else:
-                        #     print("nothing")
+                        if speed_obs <= 50:
+                            crash_counter += 1
+                            break
 
                         pressed = pygame.key.get_pressed()
 
@@ -280,8 +276,6 @@ class Game:
 
                             # print("leading car")
                             # print(lead_car.angle)
-
-
 
                             action = np.argmax(q_table_steering[steering_obs])
 
@@ -335,10 +329,6 @@ class Game:
                             pygame.display.update()
 
                             self.clock.tick(self.ticks)
-
-                with open(f"qtableSteering-{int(time.time())}.pickle", "wb") as f:
-                    pickle.dump(q_table_steering, f)
-                    learning_state = False
                 self.exit = True
 
         pygame.quit()
